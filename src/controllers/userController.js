@@ -33,20 +33,30 @@ export const register = async (data) => {
 }
 
 export const login = async (data) => {
-  const user_exist = await User.findOne({ $or: [{ email: data.email }, { nickname: data.nickname }] });
-  if (!user_exist) throw new Error('EMAIL_PASSWORD')
-  if (user_exist.is_active === false) throw new Error('DELETED')
   try {
-      const compare_password = bcrypt.compareSync(data.password, user_exist.password)
-      if (!compare_password) throw new Error('EMAIL_PASSWORD')
+    const user_exist = await User.findOne({
+      $or: [{ email: data.email }, { nickname: data.nickname }]
+    });
 
-      const token = jwt.sign({ user: user_exist }, CONFIDENCE.SECRETDB, { expiresIn: '12h' });
-      return {
-          succes: true,
-          data: user_exist,
-          token: token
-      }
+    if (!user_exist) throw new Error('EMAIL_PASSWORD');
+    if (user_exist.is_active === false) throw new Error('DELETED');
+
+    const compare_password = bcrypt.compareSync(data.password, user_exist.password);
+    if (!compare_password) throw new Error('EMAIL_PASSWORD');
+
+    const token = jwt.sign(
+      { user: user_exist },
+      dot_env_conf.SECRETDB,
+      { expiresIn: '12h' }
+    );
+
+    return {
+      succes: true,
+      data: user_exist,
+      token: token
+    };
   } catch (error) {
-      throw new Error('BAD_REQUEST')
+    console.error("❌ Error en login:", error.message, error);
+    throw error; // ← Propaga el error real
   }
-}
+};
